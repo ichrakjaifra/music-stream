@@ -1,0 +1,151 @@
+<div [class]="cardClass()"
+     (click)="onCardClick()"
+     (mouseenter)="isHovered.set(true)"
+     (mouseleave)="isHovered.set(false); closeMenu()"
+     tabindex="0"
+     role="button"
+     [attr.aria-label]="'Piste: ' + track.title + ' - ' + track.artist">
+
+  <!-- Cover Image avec overlay -->
+  <div class="cover-container" [style.background]="coverColor()">
+    <img [src]="track.coverImage || 'assets/images/default-cover.png'"
+         [alt]="track.title"
+         class="cover-image"
+         loading="lazy">
+
+    <!-- Overlay de lecture -->
+    <div class="cover-overlay" *ngIf="isHovered() || isPlaying">
+      <button class="btn-play-overlay"
+              (click)="onPlayClick($event)"
+              [attr.aria-label]="isPlaying ? 'Mettre en pause' : 'Lire la piste'">
+        <i [class]="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+      </button>
+    </div>
+
+    <!-- Badge de catégorie -->
+    <div class="category-badge" [style.background]="getCategoryColor()">
+      {{ track.category | slice:0:3 | uppercase }}
+    </div>
+
+    <!-- Badge de durée -->
+    <div class="duration-badge">
+      {{ track.duration | duration:'short' }}
+    </div>
+
+    <!-- Animation de lecture -->
+    <div class="playing-animation" *ngIf="isPlaying">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+  </div>
+
+  <!-- Contenu de la carte -->
+  <div class="card-content">
+
+    <!-- En-tête -->
+    <div class="card-header">
+      <h6 class="track-title" [title]="track.title">
+        {{ track.title }}
+      </h6>
+      <p class="track-artist text-muted">
+        {{ track.artist }}
+      </p>
+    </div>
+
+    <!-- Description (uniquement en mode normal) -->
+    <div class="card-description" *ngIf="!compact && track.description">
+      <p class="small text-muted mb-0">
+        {{ track.description | slice:0:100 }}{{ track.description.length > 100 ? '...' : '' }}
+      </p>
+    </div>
+
+    <!-- Métadonnées -->
+    <div class="card-meta">
+      <div class="meta-item" [title]="'Ajoutée le ' + formatDate(track.addedDate)">
+        <i class="bi bi-calendar3"></i>
+        <span class="ms-1">{{ formatDate(track.addedDate) }}</span>
+      </div>
+
+      <div class="meta-item" [title]="'Taille: ' + (track.fileSize | fileSize)">
+        <i class="bi bi-hdd"></i>
+        <span class="ms-1">{{ track.fileSize | fileSize }}</span>
+      </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="card-stats">
+      <div class="stat-item" (click)="onLikeClick($event)" title="J'aime">
+        <i class="bi bi-heart" [class.text-danger]="likesCount() > 0"></i>
+        <span class="ms-1">{{ likesCount() }}</span>
+      </div>
+
+      <div class="stat-item" title="Lectures">
+        <i class="bi bi-play-fill"></i>
+        <span class="ms-1">{{ playsCount() }}</span>
+      </div>
+    </div>
+
+    <!-- Actions (uniquement en mode normal) -->
+    <div class="card-actions" *ngIf="showActions && !compact">
+      <div class="actions-left">
+        <button class="btn-action"
+                (click)="onPlayClick($event)"
+                [title]="isPlaying ? 'Pause' : 'Lecture'">
+          <i [class]="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+        </button>
+
+        <button class="btn-action"
+                (click)="onAddToQueueClick($event)"
+                title="Ajouter à la file">
+          <i class="bi bi-plus-circle"></i>
+        </button>
+
+        <button class="btn-action"
+                (click)="onLikeClick($event)"
+                [title]="likesCount() > 0 ? 'Retirer le like' : 'Ajouter un like'">
+          <i class="bi bi-heart" [class.text-danger]="likesCount() > 0"></i>
+        </button>
+      </div>
+
+      <div class="actions-right">
+        <!-- Menu déroulant -->
+        <div class="dropdown" [class.show]="isMenuOpen()">
+          <button class="btn-action"
+                  (click)="toggleMenu($event)"
+                  title="Plus d'options">
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+
+          <div class="dropdown-menu" [class.show]="isMenuOpen()">
+            <button class="dropdown-item" (click)="onEditClick($event)">
+              <i class="bi bi-pencil me-2"></i> Modifier
+            </button>
+            <button class="dropdown-item" (click)="onAddToQueueClick($event)">
+              <i class="bi bi-plus-circle me-2"></i> Ajouter à la file
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item text-danger" (click)="onDeleteClick($event)">
+              <i class="bi bi-trash me-2"></i> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions compactes -->
+    <div class="card-actions-compact" *ngIf="showActions && compact">
+      <button class="btn-action-compact"
+              (click)="onPlayClick($event)"
+              [title]="isPlaying ? 'Pause' : 'Lecture'">
+        <i [class]="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Indicateur de sélection -->
+  <div class="selection-indicator" *ngIf="isSelected">
+    <i class="bi bi-check-circle-fill"></i>
+  </div>
+</div>
