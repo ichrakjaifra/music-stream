@@ -1,0 +1,253 @@
+<form [formGroup]="trackForm" (ngSubmit)="onSubmit()" class="track-form animate-fade-in">
+  <!-- Header -->
+  <div class="form-header mb-4">
+    <h4 class="mb-0">
+      <i class="bi bi-{{ isEditing ? 'pencil' : 'plus-circle' }} me-2"></i>
+      {{ isEditing ? 'Modifier la piste' : 'Ajouter une nouvelle piste' }}
+    </h4>
+    <p class="text-muted mb-0 small">
+      {{ isEditing ? 'Mettez à jour les informations de votre piste' : 'Remplissez les informations de votre nouvelle piste' }}
+    </p>
+  </div>
+
+  <!-- Drag & Drop Zone -->
+  <div class="drop-zone mb-4"
+       appDragDrop
+       (filesDropped)="onFilesDropped($event)"
+       (dragOver)="onDragOver($event)"
+       [class.dragging]="isDragging()">
+
+    <div class="drop-zone-content text-center py-5">
+      <i class="bi bi-cloud-upload display-4 text-muted mb-3"></i>
+      <h5>Glissez-déposez vos fichiers</h5>
+      <p class="text-muted small mb-3">
+        Fichiers audio et images (optionnel)
+      </p>
+      <div class="d-flex justify-content-center gap-3">
+        <div class="file-input-wrapper">
+          <input type="file"
+                 id="audioFile"
+                 class="file-input"
+                 accept=".mp3,.wav,.ogg,.m4a,audio/*"
+                 (change)="onAudioSelected($event)"
+                 hidden>
+          <label for="audioFile" class="btn btn-outline-primary">
+            <i class="bi bi-music-note-beamed me-2"></i>
+            Ajouter Audio
+          </label>
+        </div>
+        <div class="file-input-wrapper">
+          <input type="file"
+                 id="imageFile"
+                 class="file-input"
+                 accept=".jpg,.jpeg,.png,.webp,image/*"
+                 (change)="onImageSelected($event)"
+                 hidden>
+          <label for="imageFile" class="btn btn-outline-secondary">
+            <i class="bi bi-image me-2"></i>
+            Ajouter Image
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fichiers sélectionnés -->
+  <div *ngIf="audioFile() || imageFile()" class="selected-files mb-4">
+
+    <!-- Fichier Audio -->
+    <div *ngIf="audioFile()" class="file-card mb-3">
+      <div class="file-card-header">
+        <i class="bi bi-file-earmark-music text-primary me-2"></i>
+        <span class="file-name">{{ audioFileName }}</span>
+        <span class="file-size ms-2 text-muted">({{ audioFileSize }})</span>
+      </div>
+      <div class="file-card-body">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="audio-info">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-clock me-2"></i>
+                <span *ngIf="!audioLoading()">{{ audioDurationFormatted }}</span>
+                <span *ngIf="audioLoading()" class="text-muted">
+                  <i class="bi bi-arrow-clockwise animate-spin me-1"></i>
+                  Chargement...
+                </span>
+              </div>
+              <div class="d-flex align-items-center mt-1">
+                <i class="bi bi-filetype-mp3 me-2"></i>
+                <span class="text-muted">{{ audioFile()?.type }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 text-end">
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="audioFile.set(null)">
+              <i class="bi bi-x"></i> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fichier Image -->
+    <div *ngIf="imageFile()" class="file-card mb-3">
+      <div class="file-card-header">
+        <i class="bi bi-file-earmark-image text-success me-2"></i>
+        <span class="file-name">{{ imageFileName }}</span>
+        <span class="file-size ms-2 text-muted">({{ imageFileSize }})</span>
+      </div>
+      <div class="file-card-body">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="image-preview">
+              <img [src]="imageFile() ? URL.createObjectURL(imageFile()!) : ''"
+                   alt="Preview"
+                   class="img-thumbnail"
+                   style="max-width: 100px; max-height: 100px;">
+            </div>
+          </div>
+          <div class="col-md-6 text-end">
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="imageFile.set(null)">
+              <i class="bi bi-x"></i> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages d'erreur fichiers -->
+  <div *ngIf="audioError()" class="alert alert-danger animate-fade-in">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ audioError() }}
+  </div>
+
+  <div *ngIf="imageError()" class="alert alert-danger animate-fade-in">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ imageError() }}
+  </div>
+
+  <!-- Formulaire -->
+  <div class="row">
+    <!-- Titre -->
+    <div class="col-md-6 mb-3">
+      <label for="title" class="form-label">
+        <i class="bi bi-music-note me-2"></i>
+        Titre *
+      </label>
+      <input type="text"
+             id="title"
+             class="form-control"
+             formControlName="title"
+             [class]="getFieldClass('title')"
+             placeholder="Nom de la chanson"
+             maxlength="50">
+      <div class="form-text d-flex justify-content-between">
+        <span class="text-danger" *ngIf="getFieldError('title')">
+          {{ getFieldError('title') }}
+        </span>
+        <span class="text-muted">
+          {{ title?.value?.length || 0 }}/50 caractères
+        </span>
+      </div>
+    </div>
+
+    <!-- Artiste -->
+    <div class="col-md-6 mb-3">
+      <label for="artist" class="form-label">
+        <i class="bi bi-person me-2"></i>
+        Artiste *
+      </label>
+      <input type="text"
+             id="artist"
+             class="form-control"
+             formControlName="artist"
+             [class]="getFieldClass('artist')"
+             placeholder="Nom de l'artiste"
+             maxlength="50">
+      <div class="form-text d-flex justify-content-between">
+        <span class="text-danger" *ngIf="getFieldError('artist')">
+          {{ getFieldError('artist') }}
+        </span>
+        <span class="text-muted">
+          {{ artist?.value?.length || 0 }}/50 caractères
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="mb-3">
+    <label for="description" class="form-label">
+      <i class="bi bi-chat-left-text me-2"></i>
+      Description
+    </label>
+    <textarea id="description"
+              class="form-control"
+              formControlName="description"
+              [class]="getFieldClass('description')"
+              rows="3"
+              placeholder="Description optionnelle de la piste..."
+              maxlength="200"></textarea>
+    <div class="form-text d-flex justify-content-between">
+      <span class="text-danger" *ngIf="getFieldError('description')">
+        {{ getFieldError('description') }}
+      </span>
+      <span class="text-muted">
+        {{ description?.value?.length || 0 }}/200 caractères
+      </span>
+    </div>
+  </div>
+
+  <!-- Catégorie -->
+  <div class="mb-4">
+    <label for="category" class="form-label">
+      <i class="bi bi-tags me-2"></i>
+      Catégorie *
+    </label>
+    <select id="category"
+            class="form-select"
+            formControlName="category"
+            [class]="getFieldClass('category')">
+      <option value="" disabled>Sélectionnez une catégorie</option>
+      <option *ngFor="let cat of categories" [value]="cat">
+        {{ cat | titlecase }}
+      </option>
+    </select>
+    <div class="form-text">
+      <span class="text-danger" *ngIf="getFieldError('category')">
+        {{ getFieldError('category') }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Boutons d'action -->
+  <div class="form-actions d-flex justify-content-between align-items-center">
+    <div class="form-info">
+      <p class="small text-muted mb-0">
+        <i class="bi bi-info-circle me-1"></i>
+        Tous les champs marqués d'un * sont obligatoires
+      </p>
+    </div>
+
+    <div class="form-buttons d-flex gap-2">
+      <button type="button"
+              class="btn btn-outline-secondary"
+              (click)="onCancel()">
+        <i class="bi bi-x-lg me-1"></i>
+        Annuler
+      </button>
+
+      <button type="submit"
+              class="btn btn-primary"
+              [disabled]="trackForm.invalid || !audioFile()">
+        <i class="bi bi-{{ isEditing ? 'check-lg' : 'plus-lg' }} me-1"></i>
+        {{ isEditing ? 'Mettre à jour' : 'Ajouter la piste' }}
+      </button>
+    </div>
+  </div>
+</form>
