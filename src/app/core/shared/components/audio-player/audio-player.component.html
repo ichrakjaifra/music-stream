@@ -1,0 +1,289 @@
+<div *ngIf="currentTrack()" class="audio-player-container animate-slide-in">
+  <!-- Player Principal -->
+  <div class="audio-player glass-effect">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+
+        <!-- Track Info (Gauche) -->
+        <div class="col-md-3">
+          <div class="track-info d-flex align-items-center">
+            <!-- Cover Image avec effet -->
+            <div class="cover-container position-relative me-3">
+              <img
+                [src]="currentTrack()?.coverImage || 'assets/images/default-cover.png'"
+                [alt]="currentTrack()?.title"
+                class="cover-image rounded shadow-lg"
+                [style.borderColor]="getTrackColor()"
+              >
+              <div class="cover-overlay" [style.background]="'linear-gradient(135deg, ' + getTrackColor() + '33 0%, transparent 100%)'"></div>
+
+              <!-- Animation de lecture -->
+              <div *ngIf="isPlaying()" class="playing-animation">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+              </div>
+            </div>
+
+            <!-- Track Details -->
+            <div class="track-details">
+              <h6 class="track-title mb-0 text-truncate" [title]="currentTrack()?.title">
+                {{ currentTrack()?.title }}
+              </h6>
+              <p class="track-artist text-muted mb-0 small">
+                {{ currentTrack()?.artist }}
+              </p>
+              <div class="track-meta d-flex align-items-center gap-2 mt-1">
+                <span class="badge bg-dark">{{ currentTrack()?.category | titlecase }}</span>
+                <span class="text-muted small">
+                  <i class="bi bi-play-fill me-1"></i>{{ currentTrack()?.plays || 0 }}
+                </span>
+                <button class="btn-like" (click)="likeCurrentTrack()">
+                  <i class="bi bi-heart" [class.text-danger]="currentTrack()?.likes || 0 > 0"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls (Centre) -->
+        <div class="col-md-6">
+          <div class="player-controls">
+
+            <!-- Boutons de contrôle principaux -->
+            <div class="controls-top d-flex justify-content-center align-items-center gap-3 mb-3">
+              <!-- Shuffle -->
+              <button class="btn-control"
+                      [class.active]="isShuffled()"
+                      (click)="toggleShuffle()"
+                      title="Mélanger">
+                <i class="bi bi-shuffle"></i>
+              </button>
+
+              <!-- Previous -->
+              <button class="btn-control btn-control-lg"
+                      (click)="previous()"
+                      [disabled]="!hasPrevious()"
+                      title="Précédent">
+                <i class="bi bi-skip-backward-fill"></i>
+              </button>
+
+              <!-- Play/Pause -->
+              <button class="btn-play-pause"
+                      (click)="togglePlay()"
+                      [disabled]="isLoading()"
+                      title="{{ isPlaying() ? 'Pause' : 'Lecture' }}">
+                <i *ngIf="isLoading()" class="bi bi-arrow-clockwise animate-spin"></i>
+                <i *ngIf="!isLoading()"
+                   [class.bi-play-fill]="!isPlaying()"
+                   [class.bi-pause-fill]="isPlaying()"></i>
+              </button>
+
+              <!-- Next -->
+              <button class="btn-control btn-control-lg"
+                      (click)="next()"
+                      [disabled]="!hasNext()"
+                      title="Suivant">
+                <i class="bi bi-skip-forward-fill"></i>
+              </button>
+
+              <!-- Repeat -->
+              <button class="btn-control"
+                      [class.active]="isRepeating()"
+                      (click)="toggleRepeat()"
+                      title="Répéter">
+                <i class="bi bi-repeat"></i>
+              </button>
+            </div>
+
+            <!-- Barre de progression -->
+            <div class="progress-container position-relative">
+              <!-- Temps actuel -->
+              <div class="time-current">
+                {{ currentTimeFormatted() }}
+              </div>
+
+              <!-- Barre de progression -->
+              <div class="progress-wrapper"
+                   (mousedown)="onSeekStart($event)"
+                   (mousemove)="onSeeking($event)"
+                   (mouseup)="onSeekEnd($event)"
+                   (mouseleave)="isSeeking.set(false)">
+
+                <!-- Barre de fond -->
+                <div class="progress-background"></div>
+
+                <!-- Barre de progression -->
+                <div class="progress-fill" [style.width.%]="progress()"></div>
+
+                <!-- Buffer -->
+                <div class="progress-buffer"></div>
+
+                <!-- Curseur -->
+                <div class="progress-cursor" [style.left.%]="progress()"></div>
+
+                <!-- Preview du temps -->
+                <div *ngIf="seekPreviewTime() !== null"
+                     class="seek-preview"
+                     [style.left.%]="(seekPreviewTime()! / duration()) * 100">
+                  {{ getSeekPreviewFormatted() }}
+                </div>
+              </div>
+
+              <!-- Temps total -->
+              <div class="time-total">
+                {{ durationFormatted() }}
+              </div>
+            </div>
+
+            <!-- Queue info -->
+            <div class="queue-info text-center mt-2">
+              <button class="btn-queue small" (click)="toggleQueue()">
+                <i class="bi bi-music-note-list me-1"></i>
+                {{ queueInfo().current }}/{{ queueInfo().total }}
+                <span class="ms-2 text-muted">
+                  ({{ queueInfo().duration | duration }})
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Volume & Options (Droite) -->
+        <div class="col-md-3">
+          <div class="player-options d-flex align-items-center justify-content-end gap-3">
+
+            <!-- Bouton Like -->
+            <button class="btn-option"
+                    (click)="likeCurrentTrack()"
+                    title="Ajouter aux favoris">
+              <i class="bi bi-heart" [class.text-danger]="currentTrack()?.likes || 0 > 0"></i>
+            </button>
+
+            <!-- Bouton Queue -->
+            <button class="btn-option"
+                    (click)="toggleQueue()"
+                    title="File d'attente">
+              <i class="bi bi-music-note-list"></i>
+            </button>
+
+            <!-- Volume -->
+            <div class="volume-control d-flex align-items-center">
+              <button class="btn-option me-2"
+                      (click)="toggleMute()"
+                      title="{{ isMuted() ? 'Activer le son' : 'Couper le son' }}">
+                <i [class.bi-volume-mute-fill]="isMuted()"
+                   [class.bi-volume-up-fill]="!isMuted() && volume() > 0.5"
+                   [class.bi-volume-down-fill]="!isMuted() && volume() <= 0.5 && volume() > 0"
+                   [class.bi-volume-off-fill]="!isMuted() && volume() === 0"></i>
+              </button>
+
+              <!-- Slider Volume -->
+              <div class="volume-slider-wrapper" *ngIf="showVolumeSlider()">
+                <input type="range"
+                       class="volume-slider"
+                       min="0"
+                       max="1"
+                       step="0.01"
+                       [value]="volume()"
+                       (input)="onVolumeChange($event)">
+              </div>
+
+              <!-- Bouton pour afficher/masquer le slider -->
+              <button class="btn-option ms-2"
+                      (click)="toggleVolumeSlider()"
+                      title="Contrôle du volume">
+                <i class="bi bi-sliders"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Informations supplémentaires -->
+          <div class="player-stats mt-2 text-end">
+            <div class="d-flex justify-content-end gap-3 small text-muted">
+              <span>
+                <i class="bi bi-file-earmark-music me-1"></i>
+                {{ currentTrack()?.fileSize | fileSize }}
+              </span>
+              <span>
+                <i class="bi bi-clock me-1"></i>
+                {{ currentTrack()?.duration | duration:'short' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- File d'attente (Overlay) -->
+  <div *ngIf="showQueue()" class="queue-overlay glass-effect">
+    <div class="queue-header d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0">
+        <i class="bi bi-music-note-list me-2"></i>
+        File d'attente ({{ queue().length }})
+      </h6>
+      <div class="queue-actions">
+        <button class="btn btn-sm btn-outline-danger me-2"
+                (click)="clearQueue()"
+                [disabled]="queue().length === 0">
+          <i class="bi bi-trash me-1"></i> Vider
+        </button>
+        <button class="btn btn-sm btn-outline-secondary"
+                (click)="toggleQueue()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Liste de la queue -->
+    <div class="queue-list">
+      <div *ngFor="let track of queue(); let i = index"
+           class="queue-item"
+           [class.current]="i === currentIndex()"
+           (click)="playFromQueue(i)">
+
+        <div class="queue-item-number">
+          {{ i + 1 }}
+        </div>
+
+        <div class="queue-item-cover">
+          <img [src]="track.coverImage || 'assets/images/default-cover.png'"
+               [alt]="track.title"
+               class="rounded">
+        </div>
+
+        <div class="queue-item-info flex-grow-1">
+          <div class="queue-item-title">
+            {{ track.title }}
+            <span *ngIf="i === currentIndex()" class="badge bg-danger ms-2">
+              <i class="bi bi-play-fill"></i> En cours
+            </span>
+          </div>
+          <div class="queue-item-artist text-muted">
+            {{ track.artist }}
+          </div>
+          <div class="queue-item-meta d-flex gap-2 small">
+            <span class="badge bg-dark">{{ track.category | titlecase }}</span>
+            <span>{{ track.duration | duration:'short' }}</span>
+          </div>
+        </div>
+
+        <div class="queue-item-actions">
+          <button class="btn btn-sm btn-outline-danger"
+                  (click)="$event.stopPropagation(); removeFromQueue(i)">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue vide -->
+      <div *ngIf="queue().length === 0" class="queue-empty text-center py-5">
+        <i class="bi bi-music-note-beamed display-4 text-muted mb-3"></i>
+        <p class="text-muted">La file d'attente est vide</p>
+        <p class="small text-muted">Ajoutez des pistes depuis la bibliothèque</p>
+      </div>
+    </div>
+  </div>
+</div>
