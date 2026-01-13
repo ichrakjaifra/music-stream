@@ -202,14 +202,37 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
 
   // ============ UTILITIES ============
 
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('fr-FR', {
+  formatDate(date: Date | string | null | undefined): string {
+    if (!date) {
+      return 'Date inconnue';
+    }
+
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    // Vérifier si la date est valide
+    if (isNaN(dateObj.getTime())) {
+      return 'Date invalide';
+    }
+
+    return dateObj.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
+  }
+
+  // AJOUTER CETTE MÉTHODE
+  getFileUrlDisplay(): string {
+    const fileUrl = this.track()?.fileUrl;
+    if (!fileUrl) {
+      return 'N/A';
+    }
+
+    if (fileUrl.length > 100) {
+      return fileUrl.slice(0, 100) + '...';
+    }
+
+    return fileUrl;
   }
 
   getCategoryColor(category: string): string {
