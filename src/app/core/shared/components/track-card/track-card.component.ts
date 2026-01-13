@@ -1,9 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Track } from '../../../core/models/track.model';
-import { AudioPlayerService } from '../../../core/services/audio-player.service';
-import { TrackService } from '../../../core/services/track.service';
+import { Track } from '../../../models/track.model';
+import { AudioPlayerService } from '../../../services/audio-player.service';
+import { TrackService } from '../../../services/track.service';
 import { DurationPipe } from '../../pipes/duration.pipe';
 import { FileSizePipe } from '../../pipes/file-size.pipe';
 
@@ -37,13 +37,16 @@ export class TrackCardComponent implements OnInit {
   playsCount = signal(0);
 
   // Computed
-  cardClass = computed(() => ({
-    'track-card': true,
-    'compact': this.compact,
-    'selected': this.isSelected,
-    'playing': this.isPlaying,
-    'hovered': this.isHovered()
-  }));
+  cardClass = computed(() => {
+    const classes: Record<string, boolean> = {
+      'track-card': true,
+      'compact': this.compact,
+      'selected': this.isSelected,
+      'playing': this.isPlaying,
+      'hovered': this.isHovered()
+    };
+    return classes;
+  });
 
   coverColor = computed(() => this.track.coverColor || '#E50914');
 
@@ -77,7 +80,9 @@ export class TrackCardComponent implements OnInit {
 
   onDeleteClick(event: Event): void {
     event.stopPropagation();
-    this.delete.emit(this.track);
+    if (confirm(`Êtes-vous sûr de vouloir supprimer "${this.track.title}" ?`)) {
+      this.delete.emit(this.track);
+    }
   }
 
   onAddToQueueClick(event: Event): void {
@@ -144,8 +149,9 @@ export class TrackCardComponent implements OnInit {
     return categoryColors[this.track.category] || '#E50914';
   }
 
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('fr-FR', {
+  formatDate(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'

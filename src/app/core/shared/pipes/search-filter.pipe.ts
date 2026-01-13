@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { Track } from '../../core/models/track.model';
+import { Track } from '../../models/track.model';
 
 @Pipe({
   name: 'searchFilter',

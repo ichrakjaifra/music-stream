@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DurationPipe } from '../../pipes/duration.pipe';
-import { AudioPlayerService } from '../../../core/services/audio-player.service';
-import { TrackService } from '../../../core/services/track.service';
+import { AudioPlayerService } from '../../../services/audio-player.service';
+import { TrackService } from '../../../services/track.service';
+import { Track } from '../../../models/track.model';
 
 @Component({
   selector: 'app-audio-player',
@@ -36,7 +37,14 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   hasNext = computed(() => this.playerService.hasNext());
   hasPrevious = computed(() => this.playerService.hasPrevious());
   queue = computed(() => this.playerService.queue());
-  currentIndex = computed(() => this.playerService.currentIndex());
+
+  // CORRECTION: Utiliser currentIndex() comme computed signal
+  currentIndex = computed(() => {
+    // Vous devez ajouter currentIndexSignal dans AudioPlayerService
+    // Si ce n'est pas encore fait, voici comment le faire :
+    return this.playerService['currentIndexSignal']?.() || -1;
+  });
+
   queueInfo = computed(() => this.playerService.queueInfo());
 
   // Formattage
@@ -59,23 +67,25 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.playerService.restoreState();
 
-    // Écouter les erreurs
-    const errorSub = this.playerService.error.subscribe(error => {
+    // CORRECTION: Pour les erreurs, utiliser un effet au lieu de subscribe
+    effect(() => {
+      const error = this.playerService.error();
       if (error) {
         console.error('Player error:', error);
         // Pourrait afficher une notification
       }
     });
-    this.subscriptions.push(errorSub);
 
-    // Écouter les changements de piste
-    const trackSub = this.playerService.currentTrack.subscribe(track => {
+    // CORRECTION: Pour les changements de piste, utiliser un effet
+    effect(() => {
+      const track = this.playerService.currentTrack();
       if (track) {
         // Incrémenter le compteur de lectures
-        this.trackService.playTrack(track.id).catch(console.error);
+        this.trackService.playTrack(track.id).catch(error => {
+          console.error('Error incrementing plays:', error);
+        });
       }
     });
-    this.subscriptions.push(trackSub);
   }
 
   ngOnDestroy(): void {

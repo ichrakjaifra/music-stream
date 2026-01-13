@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal } fro
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { Track, MusicCategory } from '../../../core/models/track.model';
+import { Track, MusicCategory } from '../../../models/track.model';
 import { DragDropDirective } from '../../directives/drag-drop.directive';
 
 @Component({
