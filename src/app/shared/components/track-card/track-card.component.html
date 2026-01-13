@@ -145,7 +145,7 @@
   </div>
 
   <!-- Indicateur de sélection -->
-  <div class="selection-indicator" *ngIf="isSelected">
+  <div class="selection-indicator" *ngIf="isSelected" (click)="onSelectClick($event)">
     <i class="bi bi-check-circle-fill"></i>
   </div>
 </div>

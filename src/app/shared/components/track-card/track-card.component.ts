@@ -27,7 +27,7 @@ export class TrackCardComponent implements OnInit {
   @Output() delete = new EventEmitter<Track>();
   @Output() addToQueue = new EventEmitter<Track>();
   @Output() like = new EventEmitter<Track>();
-  @Output() select = new EventEmitter<Track>();
+  @Output() select = new EventEmitter<Event>(); // Changé pour émettre un Event
 
   // Signals
   isHovered = signal(false);
@@ -109,7 +109,7 @@ export class TrackCardComponent implements OnInit {
 
   onSelectClick(event: Event): void {
     event.stopPropagation();
-    this.select.emit(this.track);
+    this.select.emit(event); // Émettre l'événement au lieu de la track
   }
 
   onCardClick(): void {

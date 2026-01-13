@@ -28,6 +28,7 @@ export class AudioPlayerService {
   readonly volume = computed(() => this.volumeSignal());
   readonly isMuted = computed(() => this.isMutedSignal());
   readonly queue = computed(() => this.queueSignal());
+  readonly currentIndex = computed(() => this.currentIndexSignal()); // AJOUTEZ CETTE LIGNE
   readonly originalQueue = computed(() => this.originalQueueSignal());
   readonly isShuffled = computed(() => this.isShuffledSignal());
   readonly isRepeating = computed(() => this.isRepeatingSignal());

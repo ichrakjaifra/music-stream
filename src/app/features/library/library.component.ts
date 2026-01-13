@@ -28,8 +28,8 @@ import { DragDropDirective } from '../../shared/directives/drag-drop.directive';
     SearchFilterPipe,
     DragDropDirective
   ],
-  templateUrl: './library.component.html',
-  styleUrls: ['./library.component.css']
+  templateUrl: 'library.component.html',
+  styleUrls: ['library.component.css']
 })
 export class LibraryComponent implements OnInit, OnDestroy {
   // View Children
@@ -144,6 +144,9 @@ export class LibraryComponent implements OnInit, OnDestroy {
   selectedCount = computed(() => this.selectedTracks().size);
   hasSelection = computed(() => this.selectedCount() > 0);
 
+  // Définir SortBy comme propriété publique pour le template
+  SortBy = SortBy;
+
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -211,7 +214,9 @@ export class LibraryComponent implements OnInit, OnDestroy {
         }
 
         // Retirer de la sélection
-        this.selectedTracks().delete(track.id);
+        const selected = new Set(this.selectedTracks());
+        selected.delete(track.id);
+        this.selectedTracks.set(selected);
 
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
@@ -227,15 +232,20 @@ export class LibraryComponent implements OnInit, OnDestroy {
     this.trackService.likeTrack(track.id).catch(console.error);
   }
 
-  onSelectTrack(track: Track, event?: MouseEvent): void {
-    if (event?.ctrlKey || event?.metaKey) {
+  onSelectTrack(track: Track, event?: Event): void {
+    // Vérifier si c'est un MouseEvent pour avoir accès aux propriétés
+    const mouseEvent = event as MouseEvent;
+
+    if (mouseEvent?.ctrlKey || mouseEvent?.metaKey) {
       // Sélection multiple
-      if (this.selectedTracks().has(track.id)) {
-        this.selectedTracks().delete(track.id);
+      const selected = new Set(this.selectedTracks());
+      if (selected.has(track.id)) {
+        selected.delete(track.id);
       } else {
-        this.selectedTracks().add(track.id);
+        selected.add(track.id);
       }
-    } else if (event?.shiftKey && this.selectedTracks().size > 0) {
+      this.selectedTracks.set(selected);
+    } else if (mouseEvent?.shiftKey && this.selectedTracks().size > 0) {
       // Sélection par plage
       const tracks = this.filteredTracks();
       const lastSelected = Array.from(this.selectedTracks()).pop();
@@ -245,13 +255,16 @@ export class LibraryComponent implements OnInit, OnDestroy {
       const start = Math.min(lastIndex, currentIndex);
       const end = Math.max(lastIndex, currentIndex);
 
+      const selected = new Set(this.selectedTracks());
       for (let i = start; i <= end; i++) {
-        this.selectedTracks().add(tracks[i].id);
+        selected.add(tracks[i].id);
       }
+      this.selectedTracks.set(selected);
     } else {
       // Sélection simple
-      this.selectedTracks().clear();
-      this.selectedTracks().add(track.id);
+      const selected = new Set<string>();
+      selected.add(track.id);
+      this.selectedTracks.set(selected);
     }
   }
 
@@ -272,7 +285,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
         }
       }
 
-      this.selectedTracks().clear();
+      this.selectedTracks.set(new Set());
     }
   }
 
@@ -299,14 +312,15 @@ export class LibraryComponent implements OnInit, OnDestroy {
   }
 
   clearSelection(): void {
-    this.selectedTracks().clear();
+    this.selectedTracks.set(new Set());
   }
 
   selectAll(): void {
-    this.selectedTracks().clear();
+    const selected = new Set<string>();
     this.paginatedTracks().forEach(track => {
-      this.selectedTracks().add(track.id);
+      selected.add(track.id);
     });
+    this.selectedTracks.set(selected);
   }
 
   // ============ FORM HANDLING ============
@@ -345,6 +359,11 @@ export class LibraryComponent implements OnInit, OnDestroy {
   onSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchSubject.next(input.value);
+  }
+
+  clearSearch(): void {
+    this.searchTerm.set('');
+    this.searchSubject.next('');
   }
 
   onCategoryChange(category: string): void {
@@ -399,6 +418,14 @@ export class LibraryComponent implements OnInit, OnDestroy {
       this.currentPage.update(page => page - 1);
       this.scrollToTop();
     }
+  }
+
+  getPagesArray(): number[] {
+    const pages: number[] = [];
+    for (let i = 1; i <= this.totalPages(); i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   private scrollToTop(): void {
@@ -474,7 +501,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
     if (confirm('Vider toute la bibliothèque ? Cette action est irréversible.')) {
       try {
         await this.trackService.clearAllData();
-        this.selectedTracks().clear();
+        this.selectedTracks.set(new Set());
       } catch (error) {
         console.error('Erreur lors du nettoyage:', error);
         alert('Erreur lors du nettoyage des données');

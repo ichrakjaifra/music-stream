@@ -16,12 +16,16 @@
   --gray-dark: #181818;
   --white: #FFFFFF;
 
+
   /* Effets */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.7);
   --gradient-red: linear-gradient(135deg, #E50914 0%, #B81D24 100%);
   --gradient-dark: linear-gradient(135deg, #121212 0%, #1E1E1E 100%);
+
+  --buffer-percentage: 0%;
 }
 
 /* Reset et styles globaux */

@@ -1,22 +1,26 @@
 import { Component, OnInit, OnDestroy, signal, computed, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { DurationPipe } from '../../pipes/duration.pipe';
+import { FileSizePipe } from '../../pipes/file-size.pipe';
+import { TitleCasePipe } from '../../pipes/titlecase.pipe';
 import { AudioPlayerService } from '../../../core/services/audio-player.service';
 import { TrackService } from '../../../core/services/track.service';
-import { Track } from '../../../core/models/track.model';
 
 @Component({
   selector: 'app-audio-player',
   standalone: true,
-  imports: [CommonModule, FormsModule, DurationPipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DurationPipe,
+    FileSizePipe,
+    TitleCasePipe
+  ],
   templateUrl: './audio-player.component.html',
   styleUrls: ['./audio-player.component.css']
 })
 export class AudioPlayerComponent implements OnInit, OnDestroy {
-  private subscriptions: Subscription[] = [];
-
   // État local
   showVolumeSlider = signal(false);
   showQueue = signal(false);
@@ -37,20 +41,23 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   hasNext = computed(() => this.playerService.hasNext());
   hasPrevious = computed(() => this.playerService.hasPrevious());
   queue = computed(() => this.playerService.queue());
-
-  // CORRECTION: Utiliser currentIndex() comme computed signal
-  currentIndex = computed(() => {
-    // Vous devez ajouter currentIndexSignal dans AudioPlayerService
-    // Si ce n'est pas encore fait, voici comment le faire :
-    return this.playerService['currentIndexSignal']?.() || -1;
-  });
-
+  currentIndex = computed(() => this.playerService.currentIndex());
   queueInfo = computed(() => this.playerService.queueInfo());
 
   // Formattage
   currentTimeFormatted = computed(() => this.playerService.getCurrentTimeFormatted());
   durationFormatted = computed(() => this.playerService.getDurationFormatted());
   remainingTimeFormatted = computed(() => this.playerService.getRemainingTimeFormatted());
+
+  // Computed signals pour les valeurs sécurisées
+  currentCategory = computed(() => this.currentTrack()?.category || '');
+  currentFileSize = computed(() => this.currentTrack()?.fileSize || 0);
+  currentDuration = computed(() => this.currentTrack()?.duration || 0);
+  currentLikes = computed(() => this.currentTrack()?.likes || 0);
+  currentPlays = computed(() => this.currentTrack()?.plays || 0);
+  currentTitle = computed(() => this.currentTrack()?.title || '');
+  currentArtist = computed(() => this.currentTrack()?.artist || '');
+  currentCoverImage = computed(() => this.currentTrack()?.coverImage || 'assets/images/default-cover.png');
 
   constructor(
     public playerService: AudioPlayerService,
@@ -67,20 +74,18 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.playerService.restoreState();
 
-    // CORRECTION: Pour les erreurs, utiliser un effet au lieu de subscribe
+    // Pour les erreurs
     effect(() => {
       const error = this.playerService.error();
       if (error) {
         console.error('Player error:', error);
-        // Pourrait afficher une notification
       }
     });
 
-    // CORRECTION: Pour les changements de piste, utiliser un effet
+    // Pour les changements de piste
     effect(() => {
       const track = this.playerService.currentTrack();
       if (track) {
-        // Incrémenter le compteur de lectures
         this.trackService.playTrack(track.id).catch(error => {
           console.error('Error incrementing plays:', error);
         });
@@ -89,7 +94,6 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.playerService.saveState();
   }
 

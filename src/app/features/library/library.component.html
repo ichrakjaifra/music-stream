@@ -38,7 +38,7 @@
                    [value]="searchTerm()">
             <button *ngIf="searchTerm()"
                     class="search-clear"
-                    (click)="searchTerm.set(''); searchSubject.next('')">
+                    (click)="clearSearch()">
               <i class="bi bi-x"></i>
             </button>
           </div>
@@ -397,11 +397,11 @@
             </a>
           </li>
 
-          <li *ngFor="let page of [].constructor(totalPages()); let i = index"
+          <li *ngFor="let page of getPagesArray()"
               class="page-item"
-              [class.active]="currentPage() === i + 1">
-            <a class="page-link" (click)="goToPage(i + 1)">
-              {{ i + 1 }}
+              [class.active]="currentPage() === page">
+            <a class="page-link" (click)="goToPage(page)">
+              {{ page }}
             </a>
           </li>
 
@@ -458,17 +458,18 @@
         <div class="stats-card mb-3">
           <h6 class="stats-card-title">Par catégorie</h6>
           <div class="categories-stats">
-            <div *ngFor="let category of categories()"
-                 class="category-stat"
-                 *ngIf="category !== 'all' && stats().byCategory[category]">
-              <div class="category-name">{{ category | titlecase }}</div>
-              <div class="category-bar">
-                <div class="bar-fill"
-                     [style.width.%]="(stats().byCategory[category] / stats().totalTracks) * 100">
+            <ng-container *ngFor="let category of categories()">
+              <div *ngIf="category !== 'all' && stats().byCategory[category]"
+                   class="category-stat">
+                <div class="category-name">{{ category | titlecase }}</div>
+                <div class="category-bar">
+                  <div class="bar-fill"
+                       [style.width.%]="(stats().byCategory[category] / stats().totalTracks) * 100">
+                  </div>
                 </div>
+                <div class="category-count">{{ stats().byCategory[category] }}</div>
               </div>
-              <div class="category-count">{{ stats().byCategory[category] }}</div>
-            </div>
+            </ng-container>
           </div>
         </div>
       </div>

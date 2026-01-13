@@ -10,8 +10,8 @@
             <!-- Cover Image avec effet -->
             <div class="cover-container position-relative me-3">
               <img
-                [src]="currentTrack()?.coverImage || 'assets/images/default-cover.png'"
-                [alt]="currentTrack()?.title"
+                [src]="currentCoverImage()"
+                [alt]="currentTitle()"
                 class="cover-image rounded shadow-lg"
                 [style.borderColor]="getTrackColor()"
               >
@@ -28,19 +28,19 @@
 
             <!-- Track Details -->
             <div class="track-details">
-              <h6 class="track-title mb-0 text-truncate" [title]="currentTrack()?.title">
-                {{ currentTrack()?.title }}
+              <h6 class="track-title mb-0 text-truncate" [title]="currentTitle()">
+                {{ currentTitle() }}
               </h6>
               <p class="track-artist text-muted mb-0 small">
-                {{ currentTrack()?.artist }}
+                {{ currentArtist() }}
               </p>
               <div class="track-meta d-flex align-items-center gap-2 mt-1">
-                <span class="badge bg-dark">{{ currentTrack()?.category | titlecase }}</span>
+                <span class="badge bg-dark">{{ currentCategory() | titlecase }}</span>
                 <span class="text-muted small">
-                  <i class="bi bi-play-fill me-1"></i>{{ currentTrack()?.plays || 0 }}
+                  <i class="bi bi-play-fill me-1"></i>{{ currentPlays() }}
                 </span>
                 <button class="btn-like" (click)="likeCurrentTrack()">
-                  <i class="bi bi-heart" [class.text-danger]="currentTrack()?.likes || 0 > 0"></i>
+                  <i class="bi bi-heart" [class.text-danger]="currentLikes() > 0"></i>
                 </button>
               </div>
             </div>
@@ -158,7 +158,7 @@
             <button class="btn-option"
                     (click)="likeCurrentTrack()"
                     title="Ajouter aux favoris">
-              <i class="bi bi-heart" [class.text-danger]="currentTrack()?.likes || 0 > 0"></i>
+              <i class="bi bi-heart" [class.text-danger]="currentLikes() > 0"></i>
             </button>
 
             <!-- Bouton Queue -->
@@ -204,11 +204,11 @@
             <div class="d-flex justify-content-end gap-3 small text-muted">
               <span>
                 <i class="bi bi-file-earmark-music me-1"></i>
-                {{ currentTrack()?.fileSize | fileSize }}
+                {{ currentFileSize() | fileSize }}
               </span>
               <span>
                 <i class="bi bi-clock me-1"></i>
-                {{ currentTrack()?.duration | duration:'short' }}
+                {{ currentDuration() | duration:'short' }}
               </span>
             </div>
           </div>

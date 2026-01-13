@@ -5,8 +5,11 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true
 })
 export class DurationPipe implements PipeTransform {
-  transform(seconds: number, format: 'short' | 'long' = 'short'): string {
-    if (!seconds || seconds <= 0) return format === 'short' ? '0:00' : '0 minutes';
+  transform(seconds: number | null | undefined, format: 'short' | 'long' = 'short'): string {
+    // Handle null, undefined, 0, or invalid values
+    if (seconds == null || seconds <= 0 || isNaN(seconds)) {
+      return format === 'short' ? '0:00' : '0 minutes';
+    }
 
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

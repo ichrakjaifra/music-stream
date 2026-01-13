@@ -1,14 +1,16 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Track, MusicCategory } from '../../../core/models/track.model';
 import { DragDropDirective } from '../../directives/drag-drop.directive';
+import { TitleCasePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-track-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DragDropDirective],
+  imports: [CommonModule, ReactiveFormsModule, DragDropDirective, TitleCasePipe],
   templateUrl: './track-form.component.html',
   styleUrls: ['./track-form.component.css']
 })
@@ -33,11 +35,14 @@ export class TrackFormComponent implements OnInit, OnDestroy {
   isDragging = signal<boolean>(false);
   audioDuration = signal<number>(0);
   audioLoading = signal<boolean>(false);
+  imagePreviewUrl = signal<string | null>(null);
 
   // Catégories
   categories = Object.values(MusicCategory);
 
+  private audioUrl: string | null = null;
   private subscriptions: Subscription[] = [];
+  private destroyRef = inject(DestroyRef);
 
   constructor(private fb: FormBuilder) {
     this.trackForm = this.fb.group({
@@ -64,17 +69,26 @@ export class TrackFormComponent implements OnInit, OnDestroy {
         description: this.track.description || '',
         category: this.track.category
       });
+
+      // Si une image existe en mode édition
+      if (this.track.coverImage) {
+        this.imagePreviewUrl.set(this.track.coverImage);
+      }
     }
 
     // Écouter les changements pour validation en temps réel
-    this.subscriptions.push(
-      this.trackForm.valueChanges.subscribe(() => {
+    this.trackForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
         this.clearErrors();
-      })
-    );
+      });
   }
 
   ngOnDestroy(): void {
+    // Nettoyer les URLs pour éviter les fuites de mémoire
+    this.cleanupUrls();
+
+    // Nettoyer les subscriptions
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
@@ -166,20 +180,47 @@ export class TrackFormComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Libérer l'ancienne URL si elle existe
+    this.cleanupImageUrl();
+
+    this.imageError.set('');
+    this.imageFile.set(file);
+
+    // Créer URL pour la preview
+    const imageUrl = URL.createObjectURL(file);
+    this.imagePreviewUrl.set(imageUrl);
+
     // Validation dimensions (optionnel)
     this.validateImageDimensions(file).then(isValid => {
       if (isValid) {
         this.imageError.set('');
-        this.imageFile.set(file);
       } else {
         this.imageError.set('Image trop grande (max 2000x2000px)');
-        this.imageFile.set(null);
+        // Ne pas supprimer le fichier, juste afficher un avertissement
       }
     }).catch(() => {
       // Si la validation échoue, accepter quand même le fichier
       this.imageError.set('');
-      this.imageFile.set(file);
     });
+  }
+
+  private cleanupImageUrl(): void {
+    const currentUrl = this.imagePreviewUrl();
+    if (currentUrl && currentUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(currentUrl);
+    }
+    this.imagePreviewUrl.set(null);
+  }
+
+  private cleanupUrls(): void {
+    // Nettoyer URL de l'image
+    this.cleanupImageUrl();
+
+    // Nettoyer URL de l'audio
+    if (this.audioUrl) {
+      URL.revokeObjectURL(this.audioUrl);
+      this.audioUrl = null;
+    }
   }
 
   private async loadAudioDuration(file: File): Promise<void> {
@@ -187,21 +228,28 @@ export class TrackFormComponent implements OnInit, OnDestroy {
 
     try {
       const audio = new Audio();
-      const url = URL.createObjectURL(file);
+      const audioUrl = URL.createObjectURL(file);
+      this.audioUrl = audioUrl;
 
       await new Promise<void>((resolve, reject) => {
         audio.onloadedmetadata = () => {
-          URL.revokeObjectURL(url);
+          URL.revokeObjectURL(audioUrl);
+          if (this.audioUrl === audioUrl) {
+            this.audioUrl = null;
+          }
           this.audioDuration.set(audio.duration);
           resolve();
         };
 
         audio.onerror = () => {
-          URL.revokeObjectURL(url);
+          URL.revokeObjectURL(audioUrl);
+          if (this.audioUrl === audioUrl) {
+            this.audioUrl = null;
+          }
           reject(new Error('Impossible de lire la durée'));
         };
 
-        audio.src = url;
+        audio.src = audioUrl;
       });
     } catch (error) {
       console.warn('Could not load audio duration:', error);
@@ -255,7 +303,7 @@ export class TrackFormComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (this.trackForm.valid && this.audioFile()) {
-      const trackData = this.trackForm.value;
+      const trackData = this.trackForm.value as Partial<Track>;
 
       this.submitTrack.emit({
         trackData,
@@ -284,6 +332,7 @@ export class TrackFormComponent implements OnInit, OnDestroy {
     this.audioFile.set(null);
     this.imageFile.set(null);
     this.audioDuration.set(0);
+    this.cleanupImageUrl();
     this.clearErrors();
   }
 
@@ -345,15 +394,7 @@ export class TrackFormComponent implements OnInit, OnDestroy {
   get description() { return this.trackForm.get('description'); }
   get category() { return this.trackForm.get('category'); }
 
-  get audioDurationFormatted(): string {
-    const duration = this.audioDuration();
-    if (!duration) return '';
-
-    const minutes = Math.floor(duration / 60);
-    const seconds = Math.floor(duration % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-
+  // GETTERS pour les fichiers
   get audioFileName(): string {
     const file = this.audioFile();
     return file ? file.name : '';
@@ -362,6 +403,15 @@ export class TrackFormComponent implements OnInit, OnDestroy {
   get imageFileName(): string {
     const file = this.imageFile();
     return file ? file.name : '';
+  }
+
+  get audioDurationFormatted(): string {
+    const duration = this.audioDuration();
+    if (!duration) return '';
+
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
   get audioFileSize(): string {
@@ -378,5 +428,21 @@ export class TrackFormComponent implements OnInit, OnDestroy {
 
     const sizeInMB = file.size / (1024 * 1024);
     return `${sizeInMB.toFixed(2)} MB`;
+  }
+
+  // Méthode pour supprimer l'image
+  removeImage(): void {
+    this.cleanupImageUrl();
+    this.imageFile.set(null);
+  }
+
+  // Méthode pour supprimer l'audio
+  removeAudio(): void {
+    if (this.audioUrl) {
+      URL.revokeObjectURL(this.audioUrl);
+      this.audioUrl = null;
+    }
+    this.audioFile.set(null);
+    this.audioDuration.set(0);
   }
 }
