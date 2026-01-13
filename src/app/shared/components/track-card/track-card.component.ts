@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Track } from '../../../models/track.model';
-import { AudioPlayerService } from '../../../services/audio-player.service';
-import { TrackService } from '../../../services/track.service';
+import { Track } from '../../../core/models/track.model';
+import { AudioPlayerService } from '../../../core/services/audio-player.service';
+import { TrackService } from '../../../core/services/track.service';
 import { DurationPipe } from '../../pipes/duration.pipe';
 import { FileSizePipe } from '../../pipes/file-size.pipe';
 

@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DurationPipe } from '../../pipes/duration.pipe';
-import { AudioPlayerService } from '../../../services/audio-player.service';
-import { TrackService } from '../../../services/track.service';
-import { Track } from '../../../models/track.model';
+import { AudioPlayerService } from '../../../core/services/audio-player.service';
+import { TrackService } from '../../../core/services/track.service';
+import { Track } from '../../../core/models/track.model';
 
 @Component({
   selector: 'app-audio-player',
