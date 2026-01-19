@@ -54,7 +54,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.playerService.restoreState();
     }, 100);
 
-    // حساب استخدام التخزين
+    // calcul de l'utilisation du stockage
     this.calculateStorageUsage();
   }
 
@@ -73,7 +73,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.navigate([route]);
   }
 
-  // تغيير من private إلى public
+
   scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -115,7 +115,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private calculateStorageUsage(): void {
     try {
-      // حساب استخدام localStorage
+      // localStorage
       let totalBytes = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
