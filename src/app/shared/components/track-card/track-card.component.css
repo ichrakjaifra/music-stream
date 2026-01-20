@@ -3,7 +3,7 @@
   background: var(--black-secondary);
   border: 1px solid var(--black-tertiary);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
@@ -281,11 +281,12 @@
 /* Menu déroulant */
 .dropdown {
   position: relative;
+  z-index: 10;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   right: 0;
   background: var(--black-secondary);
   border: 1px solid var(--black-tertiary);
@@ -293,11 +294,12 @@
   box-shadow: var(--shadow-lg);
   min-width: 160px;
   padding: 0.5rem 0;
-  z-index: 1000;
+  z-index: 1001;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px);
+  transform: translateY(10px);
   transition: all 0.3s ease;
+  margin-bottom: 4px;
 }
 
 .dropdown.show .dropdown-menu {
