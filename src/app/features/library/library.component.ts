@@ -31,7 +31,7 @@ import { DragDropDirective } from '../../shared/directives/drag-drop.directive';
   templateUrl: 'library.component.html',
   styleUrls: ['library.component.css']
 })
-export class LibraryComponent implements OnInit, OnDestroy{
+export class LibraryComponent implements OnInit, OnDestroy {
   // View Children
   trackForm = viewChild.required(TrackFormComponent);
 
