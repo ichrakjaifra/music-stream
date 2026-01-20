@@ -1,13 +1,13 @@
 # 🎵 MusicStream - Application de Gestion et Lecture de Musique Locale
 
 <div align="center">
-https://img.shields.io/badge/Angular-17+-DD0031?style=for-the-badge&logo=angular&logoColor=white
-https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white
-https://img.shields.io/badge/RxJS-7.0+-B7178C?style=for-the-badge&logo=reactivex&logoColor=white
-https://img.shields.io/badge/Bootstrap-5.3+-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white
-https://img.shields.io/badge/IndexedDB-DB-FF9900?style=for-the-badge&logo=indexeddb&logoColor=white
+![Angular](https://img.shields.io/badge/Angular-17+-DD0031?style=for-the-badge&logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![RxJS](https://img.shields.io/badge/RxJS-7.0+-B7178C?style=for-the-badge&logo=reactivex&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3+-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![IndexedDB](https://img.shields.io/badge/IndexedDB-Native-FF9900?style=for-the-badge&logo=googlechrome&logoColor=white)
 
-Une application musicale complète pour gérer et écouter votre bibliothèque musicale locale
+Une application musicale complète pour gérer et écouter votre bibliothèque musicale locale 🎧
 
 </div>
 
