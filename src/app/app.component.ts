@@ -14,6 +14,7 @@ import { AudioPlayerComponent } from './shared/components/audio-player/audio-pla
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
+  title = 'music-stream';
   // État de l'application
   currentRoute = signal('');
   showPlayer = signal(true);
