@@ -161,6 +161,7 @@
 /* Contenu de la carte */
 .card-content {
   padding: 1rem;
+  color: var(--white);
 }
 
 .compact .card-content {
@@ -173,6 +174,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--white);
 }
 
 .track-artist {
@@ -181,11 +183,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--gray-light);
 }
 
 .card-description {
   margin-bottom: 1rem;
   line-height: 1.4;
+  color: var(--gray-light);
+  font-size: 0.85rem;
 }
 
 .card-meta {
@@ -193,7 +198,7 @@
   gap: 1rem;
   margin-bottom: 0.75rem;
   font-size: 0.75rem;
-  color: var(--gray-light);
+  color: var(--gray-medium);
 }
 
 .meta-item {
