@@ -1,0 +1,550 @@
+<div class="library-page" [class.dragging]="isDragging()" appDragDrop (filesDropped)="onFilesDropped($event)" (dragOver)="onDragOver($event)">
+
+  <!-- En-tête -->
+  <div class="library-header glass-effect animate-fade-in">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+
+        <!-- Titre et stats -->
+        <div class="col-md-4">
+          <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">
+              <i class="bi bi-collection-play me-2"></i>
+              Bibliothèque
+            </h1>
+
+            <!-- Statistiques rapides -->
+            <div class="header-stats">
+              <span class="badge bg-dark">
+                <i class="bi bi-music-note-beamed me-1"></i>
+                {{ tracks().length }}
+              </span>
+              <span class="badge bg-dark ms-2">
+                <i class="bi bi-clock me-1"></i>
+                {{ stats().totalDuration | duration:'long' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recherche -->
+        <div class="col-md-4">
+          <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text"
+                   class="search-input"
+                   placeholder="Rechercher des pistes..."
+                   (input)="onSearchInput($event)"
+                   [value]="searchTerm()">
+            <button *ngIf="searchTerm()"
+                    class="search-clear"
+                    (click)="clearSearch()">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions principales -->
+        <div class="col-md-4">
+          <div class="header-actions d-flex justify-content-end gap-2">
+            <button class="btn btn-primary" (click)="openAddForm()">
+              <i class="bi bi-plus-lg me-1"></i>
+              Ajouter
+            </button>
+
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle"
+                      data-bs-toggle="dropdown">
+                <i class="bi bi-sliders"></i>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end">
+                <button class="dropdown-item" (click)="toggleViewMode()">
+                  <i class="bi bi-{{ viewMode() === 'grid' ? 'list' : 'grid' }} me-2"></i>
+                  Vue {{ viewMode() === 'grid' ? 'liste' : 'grille' }}
+                </button>
+                <button class="dropdown-item" (click)="toggleStats()">
+                  <i class="bi bi-graph-up me-2"></i>
+                  Statistiques
+                </button>
+                <button class="dropdown-item" (click)="toggleImportExport()">
+                  <i class="bi bi-arrow-left-right me-2"></i>
+                  Import/Export
+                </button>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item text-danger" (click)="clearAllData()">
+                  <i class="bi bi-trash me-2"></i>
+                  Vider la bibliothèque
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres et contrôles -->
+  <div class="library-controls animate-fade-in">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+
+        <!-- Catégories -->
+        <div class="col-md-6">
+          <div class="categories-filter">
+            <div class="btn-group" role="group">
+              <button *ngFor="let category of categories()"
+                      class="btn btn-outline-secondary"
+                      [class.active]="selectedCategory() === category"
+                      (click)="onCategoryChange(category)">
+                {{ category === 'all' ? 'Toutes' : (category | titlecase) }}
+                <span *ngIf="category !== 'all'" class="badge bg-dark ms-1">
+                  {{ stats().byCategory[category] || 0 }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tri et pagination -->
+        <div class="col-md-6">
+          <div class="d-flex justify-content-end align-items-center gap-3">
+
+            <!-- Tri -->
+            <div class="sort-controls">
+              <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary dropdown-toggle"
+                        data-bs-toggle="dropdown">
+                  <i class="bi bi-sort-{{ sortOrder() === 'asc' ? 'up' : 'down' }}-alt me-1"></i>
+                  {{ sortBy() | titlecase }}
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.TITLE)">
+                    <i class="bi bi-sort-alpha-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Titre
+                  </button>
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.ARTIST)">
+                    <i class="bi bi-sort-alpha-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Artiste
+                  </button>
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.DATE)">
+                    <i class="bi bi-sort-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Date
+                  </button>
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.DURATION)">
+                    <i class="bi bi-sort-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Durée
+                  </button>
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.PLAYS)">
+                    <i class="bi bi-sort-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Lectures
+                  </button>
+                  <button class="dropdown-item" (click)="onSortChange(SortBy.LIKES)">
+                    <i class="bi bi-sort-{{ sortOrder() === 'asc' ? 'down' : 'up' }} me-2"></i>
+                    Likes
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sélection -->
+            <div *ngIf="hasSelection()" class="selection-actions">
+              <span class="badge bg-primary me-2">
+                {{ selectedCount() }} sélectionné(s)
+              </span>
+              <button class="btn btn-sm btn-outline-primary me-1"
+                      (click)="playSelectedTracks()"
+                      title="Lire la sélection">
+                <i class="bi bi-play-fill"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary me-1"
+                      (click)="addSelectedToQueue()"
+                      title="Ajouter à la file">
+                <i class="bi bi-plus-circle"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      (click)="deleteSelectedTracks()"
+                      title="Supprimer la sélection">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls" *ngIf="totalPages() > 1">
+              <div class="btn-group">
+                <button class="btn btn-outline-secondary btn-sm"
+                        (click)="prevPage()"
+                        [disabled]="currentPage() === 1">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="btn btn-outline-secondary btn-sm disabled">
+                  {{ currentPage() }} / {{ totalPages() }}
+                </span>
+                <button class="btn btn-outline-secondary btn-sm"
+                        (click)="nextPage()"
+                        [disabled]="currentPage() === totalPages()">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- État de chargement -->
+  <div *ngIf="isLoading()" class="loading-state text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-3 text-muted">Chargement de votre bibliothèque...</p>
+  </div>
+
+  <!-- État d'erreur -->
+  <div *ngIf="error() && !isLoading()" class="error-state">
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ error() }}
+      <button class="btn btn-sm btn-outline-danger ms-2"
+              (click)="trackService.loadTracks()">
+        Réessayer
+      </button>
+    </div>
+  </div>
+
+  <!-- Bibliothèque vide -->
+  <div *ngIf="!isLoading() && !error() && tracks().length === 0" class="empty-state text-center py-5">
+    <i class="bi bi-music-note-beamed display-1 text-muted mb-3"></i>
+    <h3 class="mb-3">Bibliothèque vide</h3>
+    <p class="text-muted mb-4">
+      Commencez par ajouter vos premières pistes musicales
+    </p>
+    <button class="btn btn-primary btn-lg" (click)="openAddForm()">
+      <i class="bi bi-plus-lg me-2"></i>
+      Ajouter votre première piste
+    </button>
+    <p class="small text-muted mt-3">
+      Vous pouvez aussi glisser-déposer des fichiers audio directement ici
+    </p>
+  </div>
+
+  <!-- Formulaire d'ajout/modification -->
+  <div *ngIf="showForm()" class="form-overlay animate-fade-in">
+    <div class="form-container">
+      <app-track-form
+        [track]="editingTrack() || undefined"
+        [isEditing]="!!editingTrack()"
+        (submitTrack)="onTrackSubmit($event)"
+        (cancel)="onFormCancel()">
+      </app-track-form>
+    </div>
+  </div>
+
+  <!-- Contenu principal -->
+  <div *ngIf="!isLoading() && !error() && tracks().length > 0" class="library-content animate-fade-in">
+
+    <!-- Vue Grille -->
+    <div *ngIf="viewMode() === 'grid'" class="grid-view">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+        <div *ngFor="let track of paginatedTracks()" class="col">
+          <app-track-card
+            [track]="track"
+            [isPlaying]="currentPlayingId() === track.id && isPlaying()"
+            [isSelected]="selectedTracks().has(track.id)"
+            (play)="onPlayTrack(track)"
+            (pause)="onPauseTrack()"
+            (edit)="onEditTrack(track)"
+            (delete)="onDeleteTrack(track)"
+            (addToQueue)="onAddToQueue(track)"
+            (like)="onLikeTrack(track)"
+            (select)="onSelectTrack(track, $event)">
+          </app-track-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vue Liste -->
+    <div *ngIf="viewMode() === 'list'" class="list-view">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+          <tr>
+            <th width="40">
+              <input type="checkbox"
+                     [checked]="selectedCount() === paginatedTracks().length"
+                     (change)="selectedCount() === paginatedTracks().length ? clearSelection() : selectAll()">
+            </th>
+            <th width="60"></th>
+            <th (click)="onSortChange(SortBy.TITLE)">
+              Titre
+              <i *ngIf="sortBy() === SortBy.TITLE"
+                 class="bi bi-sort-{{ sortOrder() === 'asc' ? 'up' : 'down' }} ms-1"></i>
+            </th>
+            <th (click)="onSortChange(SortBy.ARTIST)">
+              Artiste
+              <i *ngIf="sortBy() === SortBy.ARTIST"
+                 class="bi bi-sort-{{ sortOrder() === 'asc' ? 'up' : 'down' }} ms-1"></i>
+            </th>
+            <th (click)="onSortChange(SortBy.DATE)">
+              Date
+              <i *ngIf="sortBy() === SortBy.DATE"
+                 class="bi bi-sort-{{ sortOrder() === 'asc' ? 'up' : 'down' }} ms-1"></i>
+            </th>
+            <th (click)="onSortChange(SortBy.DURATION)">
+              Durée
+              <i *ngIf="sortBy() === SortBy.DURATION"
+                 class="bi bi-sort-{{ sortOrder() === 'asc' ? 'up' : 'down' }} ms-1"></i>
+            </th>
+            <th>Catégorie</th>
+            <th>Statistiques</th>
+            <th width="100">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let track of paginatedTracks()"
+              [class.selected]="selectedTracks().has(track.id)"
+              [class.playing]="currentPlayingId() === track.id && isPlaying()"
+              (click)="onSelectTrack(track, $event)">
+
+            <td>
+              <input type="checkbox"
+                     [checked]="selectedTracks().has(track.id)"
+                     (click)="$event.stopPropagation()"
+                     (change)="onSelectTrack(track, $event)">
+            </td>
+
+            <td>
+              <div class="table-cover">
+                <img [src]="track.coverImage || 'assets/images/default-cover.png'"
+                     [alt]="track.title">
+              </div>
+            </td>
+
+            <td>
+              <div class="table-track-info">
+                <div class="table-track-title">{{ track.title }}</div>
+                <div *ngIf="track.description" class="table-track-description small text-muted">
+                  {{ track.description | slice:0:50 }}{{ track.description.length > 50 ? '...' : '' }}
+                </div>
+              </div>
+            </td>
+
+            <td>{{ track.artist }}</td>
+
+            <td>
+                <span class="table-date">
+                  {{ track.addedDate | date:'dd/MM/yyyy' }}
+                </span>
+            </td>
+
+            <td>
+                <span class="table-duration">
+                  {{ track.duration | duration:'short' }}
+                </span>
+            </td>
+
+            <td>
+                <span class="badge bg-dark">
+                  {{ track.category | titlecase }}
+                </span>
+            </td>
+
+            <td>
+              <div class="table-stats">
+                  <span class="me-3" title="Lectures">
+                    <i class="bi bi-play-fill me-1"></i>
+                    {{ track.plays || 0 }}
+                  </span>
+                <span title="Likes">
+                    <i class="bi bi-heart me-1"></i>
+                  {{ track.likes || 0 }}
+                  </span>
+              </div>
+            </td>
+
+            <td>
+              <div class="table-actions" (click)="$event.stopPropagation()">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        (click)="onPlayTrack(track)"
+                        [title]="currentPlayingId() === track.id && isPlaying() ? 'Pause' : 'Lecture'">
+                  <i [class]="currentPlayingId() === track.id && isPlaying() ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary me-1"
+                        (click)="onAddToQueue(track)"
+                        title="Ajouter à la file">
+                  <i class="bi bi-plus-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger"
+                        (click)="onDeleteTrack(track)"
+                        title="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination bas -->
+    <div *ngIf="totalPages() > 1" class="pagination-bottom mt-4">
+      <nav aria-label="Navigation des pages">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="currentPage() === 1">
+            <a class="page-link" (click)="prevPage()" aria-label="Précédent">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+
+          <li *ngFor="let page of getPagesArray()"
+              class="page-item"
+              [class.active]="currentPage() === page">
+            <a class="page-link" (click)="goToPage(page)">
+              {{ page }}
+            </a>
+          </li>
+
+          <li class="page-item" [class.disabled]="currentPage() === totalPages()">
+            <a class="page-link" (click)="nextPage()" aria-label="Suivant">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Panneau des statistiques -->
+  <div *ngIf="showStats()" class="stats-panel glass-effect animate-slide-in">
+    <div class="stats-header d-flex justify-content-between align-items-center mb-4">
+      <h5 class="mb-0">
+        <i class="bi bi-graph-up me-2"></i>
+        Statistiques
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" (click)="toggleStats()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <div class="row">
+      <!-- Statistiques générales -->
+      <div class="col-md-6">
+        <div class="stats-card mb-3">
+          <h6 class="stats-card-title">Général</h6>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">{{ stats().totalTracks }}</div>
+              <div class="stat-label">Pistes</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ stats().totalDuration | duration:'short' }}</div>
+              <div class="stat-label">Durée totale</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ stats().totalPlays }}</div>
+              <div class="stat-label">Lectures</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ stats().totalLikes }}</div>
+              <div class="stat-label">Likes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Par catégorie -->
+      <div class="col-md-6">
+        <div class="stats-card mb-3">
+          <h6 class="stats-card-title">Par catégorie</h6>
+          <div class="categories-stats">
+            <ng-container *ngFor="let category of categories()">
+              <div *ngIf="category !== 'all' && stats().byCategory[category]"
+                   class="category-stat">
+                <div class="category-name">{{ category | titlecase }}</div>
+                <div class="category-bar">
+                  <div class="bar-fill"
+                       [style.width.%]="(stats().byCategory[category] / stats().totalTracks) * 100">
+                  </div>
+                </div>
+                <div class="category-count">{{ stats().byCategory[category] }}</div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau Import/Export -->
+  <div *ngIf="showImportExport()" class="import-export-panel glass-effect animate-slide-in">
+    <div class="panel-header d-flex justify-content-between align-items-center mb-4">
+      <h5 class="mb-0">
+        <i class="bi bi-arrow-left-right me-2"></i>
+        Import / Export
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" (click)="toggleImportExport()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <div class="row">
+      <!-- Export -->
+      <div class="col-md-6">
+        <div class="panel-section mb-4">
+          <h6 class="section-title">
+            <i class="bi bi-download me-2"></i>
+            Exporter
+          </h6>
+          <p class="text-muted small mb-3">
+            Sauvegardez votre bibliothèque complète dans un fichier JSON
+          </p>
+          <button class="btn btn-primary w-100" (click)="exportData()">
+            <i class="bi bi-download me-2"></i>
+            Exporter les données
+          </button>
+        </div>
+      </div>
+
+      <!-- Import -->
+      <div class="col-md-6">
+        <div class="panel-section mb-4">
+          <h6 class="section-title">
+            <i class="bi bi-upload me-2"></i>
+            Importer
+          </h6>
+          <p class="text-muted small mb-3">
+            Importez des données depuis un fichier JSON
+          </p>
+          <div class="file-input-wrapper">
+            <input type="file"
+                   id="importFile"
+                   class="form-control"
+                   accept=".json,application/json"
+                   (change)="onImportFileSelected($event)"
+                   hidden>
+            <label for="importFile" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-upload me-2"></i>
+              Choisir un fichier
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-warning mt-3">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <strong>Attention:</strong> L'importation remplacera toutes vos données actuelles.
+      Assurez-vous d'avoir fait une sauvegarde avant.
+    </div>
+  </div>
+
+  <!-- Drag & Drop Overlay -->
+  <div *ngIf="isDragging()" class="drag-overlay">
+    <div class="drag-overlay-content">
+      <i class="bi bi-cloud-arrow-up display-1 mb-3"></i>
+      <h4>Déposez vos fichiers audio ici</h4>
+      <p class="text-muted">Glissez-déposez des fichiers MP3, WAV, OGG ou M4A</p>
+    </div>
+  </div>
+</div>
