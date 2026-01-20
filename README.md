@@ -1,6 +1,7 @@
 # 🎵 MusicStream - Application de Gestion et Lecture de Musique Locale
 
 <div align="center">
+
 ![Angular](https://img.shields.io/badge/Angular-17+-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![RxJS](https://img.shields.io/badge/RxJS-7.0+-B7178C?style=for-the-badge&logo=reactivex&logoColor=white)
@@ -123,7 +124,7 @@ ng serve
 Application : http://localhost:4200
 ```
 
-##" 📖 Guide d'Utilisation
+## 📖 Guide d'Utilisation
 
 ### Ajouter de la Musique
 
